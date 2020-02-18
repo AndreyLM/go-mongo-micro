@@ -3,9 +3,11 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/andreylm/go-mongo-micro/sqmplemgr/db"
+	"github.com/gorilla/mux"
 )
 
 // PingResponse - ping response
@@ -57,6 +59,7 @@ func getSweatSamplesHandler(w http.ResponseWriter, r *http.Request) {
 	respBytes, err := json.Marshal(sweats)
 	if err != nil {
 		fmt.Println("Error marhaling data", err)
+		status = http.StatusInternalServerError
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -66,5 +69,30 @@ func getSweatSamplesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getSweatByIDHandler(w http.ResponseWriter, r *http.Request) {
+	status := http.StatusOK
 
+	vars := mux.Vars(r)
+	log.Println(r.URL.String())
+	ID, ok := vars["id"]
+	if !ok {
+		fmt.Println("Error getting id")
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	sweat, err := db.GetByID(ID)
+	if err != nil {
+		fmt.Println("Error fetching data", err)
+		status = http.StatusNotFound
+	}
+
+	respBytes, err := json.Marshal(sweat)
+	if err != nil {
+		fmt.Println("Error marhaling data", err)
+		status = http.StatusInternalServerError
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
+	w.Write(respBytes)
 }
