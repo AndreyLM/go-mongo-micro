@@ -1,0 +1,120 @@
+consumes:
+- application/io.goswagger.examples.todo-list.v1+json
+info:
+  description: From the todo list tutorial on goswagger.io
+  title: A Todo list application
+  version: 1.0.0
+paths: {}
+produces:
+- application/io.goswagger.examples.todo-list.v1+json
+schemes:
+- http
+swagger: "2.0"
+paths:
+  /user:
+    post:
+      summary: "/user"
+      responses:
+        200:
+          description: "create user"
+          schema:
+            $ref: "#/definitions/user"
+        default:
+          description: "generic error response"
+          schema:
+            $ref: "#/definitions/error"
+            
+  /users:
+    get:
+      summary: "/users"
+      responses:
+        200:
+          description: list of all users
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/user"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/error"
+            
+  /user/sweat:
+    get:
+      summary: "/user/sweat"
+      responses:
+        200:
+          description: get user sweat
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/error"
+ 
+  /sweat:
+    post:
+      summary: "/sweat"
+      responses:
+        200:
+          description: create sweat
+          schema:
+            $ref: "#/definitions/sweat"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/error"
+ 
+  /sweat_samples:
+    get:
+      summary: "/sweat_samples"
+      responses:
+        200:
+          description: list all sweat samples
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/sweat"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/error"
+
+definitions:
+  user:
+    type: object
+    required: 
+      - Name
+      - Device
+    properties:
+      Name:
+        type: string
+      Device:
+        type: string
+        
+  sweat:
+    type: object
+    required: 
+      - ID
+      - UserID
+    properties:
+      ID:
+        type: string
+      UserID:
+        type: string
+      CreatedAt:
+        type: string
+      Glucose:
+        type: string
+      Chloride:
+        type: string
+      Sodium:
+        type: string
+  error:
+    type: object
+    required: 
+      - message
+    properties:
+      code:
+        type: integer
+        format: int64
+      message:
+        type: string
