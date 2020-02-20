@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/andreylm/go-mongo-micro/sqmplemgr/logger"
+
+	"github.com/andreylm/go-mongo-micro/sqmplemgr/config"
+
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,39 +19,42 @@ var (
 	db *mongo.Database
 )
 
-const (
-	user     string = "root"
-	password string = "example"
-	host     string = "localhost"
-	port     int32  = 27017
-	name     string = "sweatdb"
-)
-
-// GetDB gets db connection
-func GetDB() (db *mongo.Database, err error) {
-	if db != nil {
-		return
-	}
+// Init - inits db connection
+func Init() {
+	host := config.ReadEnvString("DB_HOST")
+	port := config.ReadEnvInt("DB_PORT")
+	name := config.ReadEnvString("DB_NAME")
+	user := config.ReadEnvString("DB_USER")
+	password := config.ReadEnvString("DB_PASSWORD")
 
 	uri := fmt.Sprintf("mongodb://%s:%s@%s:%d", user, password, host, port)
 	client, err := mongo.NewClient(options.Client().ApplyURI(uri))
 	if err != nil {
-		return
+		logger.Get().Fatal("Cannot initialize database")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	if err = client.Connect(ctx); err != nil {
-		return
+		logger.Get().Fatal("Cannot initialize database context")
 	}
 
 	if err = client.Ping(ctx, readpref.Primary()); err != nil {
-		return
+		logger.Get().Fatal("Cannot ping database")
 	}
 
-	fmt.Println("Connected to MongoDB")
+	logger.Get().Info("Connected To MongoDB")
 	db = client.Database(name)
-
 	return
+}
+
+// GetDB gets db connection
+func GetDB() *mongo.Database {
+	if db == nil {
+		logger.Get().Fatal("Database not initialized")
+		return nil
+	}
+
+	return db
 }

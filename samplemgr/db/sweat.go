@@ -2,9 +2,11 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/andreylm/go-mongo-micro/sqmplemgr/logger"
+
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -37,56 +39,82 @@ type Sweat struct {
 
 // ListAllSweat - gets all
 func ListAllSweat() (sweats []Sweat, err error) {
-	db, err := GetDB()
-	if err != nil {
-		return
-	}
+	db := GetDB()
+
 	collection := db.Collection(SweatTable)
-	cursor, err := collection.Find(context.TODO(), struct{}{})
+	cursor, err := collection.Find(context.TODO(), bson.D{})
 	if err != nil {
+		logger.Get().Infof("Find error: %v", err)
 		return
 	}
 	defer cursor.Close(context.TODO())
 	if err = cursor.All(context.TODO(), &sweats); err != nil {
+		logger.Get().Infof("Error getting data: ", err)
 		return
+	}
+
+	return
+}
+
+// GetByID - gets sweat by id
+func GetByID(ID string) (sweat Sweat, err error) {
+	db := GetDB()
+
+	collection := db.Collection(SweatTable)
+	objID, err := primitive.ObjectIDFromHex(ID)
+	if err != nil {
+		logger.Get().Infof("Invalid id: %v", err)
+		return
+	}
+
+	sr := collection.FindOne(context.TODO(), bson.M{"_id": objID})
+	err = sr.Decode(&sweat)
+	if err != nil {
+		logger.Get().Infof("Error decoding data: ", err)
 	}
 
 	return
 }
 
 // Create - creates new row in collection
-func (s *Sweat) Create() (err error) {
-	db, err := GetDB()
-	if err != nil {
-		fmt.Println("No Database connection: ", err)
-		return
+func (s *Sweat) Create(ctx context.Context) (err error) {
+	var tempUserID primitive.ObjectID
+	userID := ""
+
+	if ctx.Value("UserID") != nil {
+		userID = ctx.Value("UserID").(string)
 	}
 
+	if userID == "" {
+		logger.Get().Error("User not specified in context")
+		tempUserID = primitive.NewObjectID()
+	}
+	s.UserID = tempUserID
 	s.CreatedAt = time.Now()
+
+	db := GetDB()
+
 	collection := db.Collection(SweatTable)
-	if _, err = collection.InsertOne(context.TODO(), s); err != nil {
-		fmt.Printf("Error inserting sweat: %v", s)
+	if _, err = collection.InsertOne(ctx, s); err != nil {
+		logger.Get().Infof("Error inserting sweat: %v", s)
 		return
 	}
 
-	fmt.Println("Inserted sweat into collection")
+	logger.Get().Info("Inserted sweat into collection")
 	return
 }
 
 // Delete - deletes sweat
 func (s *Sweat) Delete() (err error) {
-	db, err := GetDB()
-	if err != nil {
-		fmt.Println("No Database connection: ", err)
-		return
-	}
+	db := GetDB()
+
 	collection := db.Collection(SweatTable)
 
 	if _, err = collection.DeleteOne(context.TODO(), s); err != nil {
-		fmt.Printf("Error deleting sweat: %v", s)
+		logger.Get().Infof("Error deleting sweat: %v", s)
 		return
 	}
 
-	fmt.Println("Deleted sweat from collection")
+	logger.Get().Info("Deleted sweat from collection")
 	return
 }

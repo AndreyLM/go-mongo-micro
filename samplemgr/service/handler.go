@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -30,23 +31,22 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 
 func createSweatHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
-	status := http.StatusOK
 
 	var s db.Sweat
 
 	if err := decoder.Decode(&s); err != nil {
-		status = http.StatusInternalServerError
-		panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
-	fmt.Println(s)
-	if err := s.Create(); err != nil {
-		status = http.StatusInternalServerError
-		panic(err)
+	r = WithUserContext(r)
+	if err := s.Create(r.Context()); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(status)
+	w.WriteHeader(http.StatusOK)
 }
 
 func getSweatSamplesHandler(w http.ResponseWriter, r *http.Request) {
@@ -95,4 +95,12 @@ func getSweatByIDHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write(respBytes)
+}
+
+// WithUserContext ...
+func WithUserContext(r *http.Request) *http.Request {
+	ctx := r.Context()
+	ctx = context.WithValue(ctx, "UserID", r.Header.Get("UserID"))
+
+	return r.WithContext(ctx)
 }

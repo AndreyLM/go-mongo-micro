@@ -1,0 +1,19 @@
+# APP
+APP_NAME: "sweatmgr"
+APP_PORT: "33001"
+
+# DB 
+DB_DRIVER: "mongodb"
+DB_HOST: "localhost"
+DB_PORT: 27017
+DB_NAME: "sweatdb"
+DB_USER: "root"
+DB_PASSWORD: "example"
+DB_AUTH_MECH: "SCRAM-SHA-1"
+
+# GRPC
+GRPC_HOST: "localhost"
+GRPC_PORT: 33010
+TLS: false
+CERT_FILE: "server.crt"
+KEY_FILE: "server.key"
